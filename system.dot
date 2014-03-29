@@ -1,0 +1,23 @@
+digraph G {
+	BC [label="Barcode Scanner"];
+	Num [label="Numpad"];
+	VFD [label="Display"];
+
+	POS [label="POS Core", shape=box];
+	BCD [label="Barcode Server"];
+	NumD [label="Numpad Server"];
+	OutD [label="Display Server"];
+
+#	DB [label="Database Server"];
+
+	BC -> BCD [label="USB/evdev"];
+	Num -> NumD [label="USB/evdev"];
+
+	BCD -> POS [label="TCP"];
+	NumD -> POS [label="TCP"];
+
+#	POS -> DB [label="PostgreSQL"];
+	POS -> OutD [label="TCP"];
+	
+	OutD -> VFD [label="USB/RS232"];
+}

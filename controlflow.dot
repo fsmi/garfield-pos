@@ -1,0 +1,26 @@
+digraph G {
+	IDLE [shape=box];	
+
+	IDLE -> IDLE [label="CANCEL"];
+	IDLE -> BC_COLLECT [label="0-9"];
+	IDLE -> PLU_COLLECT [label="PLU"];
+
+	BC_COLLECT -> BC_COLLECT [label="0-9, Backspace"]
+	BC_COLLECT -> DISPLAY_TOTAL [label="OK, CANCEL"];
+
+	PLU_COLLECT -> PLU_COLLECT [label="0-9, Backspace"];	
+	PLU_COLLECT -> DISPLAY_TOTAL [label="ENTER, CANCEL"];
+
+	DISPLAY_TOTAL -> IDLE [label="CANCEL"];
+	DISPLAY_TOTAL -> STORNO_COLLECT [label="STORNO"];
+	DISPLAY_TOTAL -> BC_COLLECT [label="0-9"];
+	DISPLAY_TOTAL -> PLU_COLLECT [label="PLU"];
+	DISPLAY_TOTAL -> PAY_COLLECT [label="PAY"];
+
+	STORNO_COLLECT -> STORNO_COLLECT [label="0-9, PLU, Backspace"];
+	STORNO_COLLECT -> DISPLAY_TOTAL [label="OK, ENTER, CANCEL"];
+
+	PAY_COLLECT -> PAY_COLLECT [label="0-9, Backspace"];
+	PAY_COLLECT -> DISPLAY_TOTAL [label="CANCEL"];
+	PAY_COLLECT -> IDLE [label="OK, ENTER"];
+}
