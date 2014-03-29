@@ -4,7 +4,8 @@
 int garfield_pos(CONFIG* cfg){
 	struct timeval tv;
 	fd_set readfds;
-	int fd_max, i, c, e,  error, bytes, offset=0, active_token=0, head_offset;
+	int fd_max, i,  error, bytes, read_offset=0, active_token=0, head_offset;
+	int conn_it, scan_head;
 	INPUT_TOKEN token;
 	TRANSITION_RESULT trans;
 
@@ -30,11 +31,11 @@ int garfield_pos(CONFIG* cfg){
 		//select over i/o descriptors
 		fd_max=-1;
 		FD_ZERO(&readfds);
-		for(i=0;i<cfg->connection_count;i++){
-			if(cfg->connections[i].fd>0){
-				FD_SET(cfg->connections[i].fd, &readfds);
-				if(cfg->connections[i].fd>fd_max){
-					fd_max=cfg->connections[i].fd;
+		for(conn_it=0;conn_it<cfg->connection_count;conn_it++){
+			if(cfg->connections[conn_it].fd>0){
+				FD_SET(cfg->connections[conn_it].fd, &readfds);
+				if(cfg->connections[conn_it].fd>fd_max){
+					fd_max=cfg->connections[conn_it].fd;
 				}
 			}
 		}
@@ -50,9 +51,9 @@ int garfield_pos(CONFIG* cfg){
 			fprintf(stderr, "Input ready from %d descriptors\n", error);
 		}
 
-		for(i=0;i<cfg->connection_count;i++){
-			if(cfg->connections[i].fd>0&&FD_ISSET(cfg->connections[i].fd, &readfds)){
-				bytes=recv(cfg->connections[i].fd, INPUT.data+offset, sizeof(INPUT.data)-offset, 0);
+		for(conn_it=0;conn_it<cfg->connection_count;conn_it++){
+			if(cfg->connections[conn_it].fd>0&&FD_ISSET(cfg->connections[conn_it].fd, &readfds)){
+				bytes=recv(cfg->connections[conn_it].fd, INPUT.data+read_offset, sizeof(INPUT.data)-read_offset, 0);
 				
 				if(bytes<0){
 					perror("read_tcp");
@@ -60,17 +61,17 @@ int garfield_pos(CONFIG* cfg){
 
 				if(bytes==0){
 					if(cfg->verbosity>2){
-						fprintf(stderr, "Connection %d lost, reconnecting with next iteration\n", i);
+						fprintf(stderr, "Connection %d lost, reconnecting with next iteration\n", conn_it);
 					}
-					cfg->connections[i].fd=-1;
+					cfg->connections[conn_it].fd=-1;
 					continue;
 				}
 
 				//terminate
-				INPUT.data[offset+bytes]=0;
+				INPUT.data[read_offset+bytes]=0;
 
 				if(cfg->verbosity>2){
-					fprintf(stderr, "%d bytes of data from conn %d\n", bytes, i);
+					fprintf(stderr, "%d bytes of data from conn %d\n", bytes, conn_it);
 				}
 
 				if(cfg->verbosity>3){
@@ -79,11 +80,11 @@ int garfield_pos(CONFIG* cfg){
 				
 				INPUT.parse_head=INPUT.data;
 				token=TOKEN_INVALID;
-				c=active_token;
+				scan_head=active_token;
 
-				while(INPUT.data[c]!=0){
+				while(INPUT.data[scan_head]!=0){
 					//recognize token
-					token=tok_read(INPUT.data+c);
+					token=tok_read(INPUT.data+scan_head);
 
 					if(token==TOKEN_INCOMPLETE){
 						break;
@@ -91,7 +92,7 @@ int garfield_pos(CONFIG* cfg){
 
 					//do transition
 					trans=transition(POS.state, token, cfg);
-					c+=tok_length(token);
+					scan_head+=tok_length(token);
 
 					if(cfg->verbosity>3){
 						fprintf(stderr, "(%s | %s) => %s %s\n", state_dbg_string(POS.state), tok_dbg_string(token), state_dbg_string(trans.state), action_dbg_string(trans.action));	
@@ -112,32 +113,32 @@ int garfield_pos(CONFIG* cfg){
 							break;
 						case TOKEN_DISCARD:
 							//remove the last token
-							for(e=0;INPUT.data[c+e]!=0;e++){
-								INPUT.data[c-tok_length(token)+e]=INPUT.data[c+e];
+							for(i=0;INPUT.data[scan_head+i]!=0;i++){
+								INPUT.data[scan_head+i-tok_length(token)]=INPUT.data[scan_head+i];
 							}
-							INPUT.data[c-tok_length(token)+e]=0;
-							c-=tok_length(token);
+							INPUT.data[scan_head+i-tok_length(token)]=0;
+							scan_head-=tok_length(token);
 							break;
 						case TOKEN_CONSUME:
 							//consume up to and including this token
-							INPUT.parse_head=INPUT.data+c;
+							INPUT.parse_head=INPUT.data+scan_head;
 							break;
 						case TOKEN_REMOVE:
 							//get offset of this and the last token
-							e=tok_last_offset_from(INPUT.data, c-tok_length(token));
-							if(e<0){
-								e=0;
+							i=tok_last_offset_from(INPUT.data, scan_head-tok_length(token));
+							if(i<0){
+								i=0;
 							}
 							//if token to be deleted is not NUMERAL or BACKSPACE, do not delete
-							if(tok_read(INPUT.data+e)!=TOKEN_NUMERAL&&tok_read(INPUT.data+e)!=TOKEN_BACKSPACE){
-								e+=tok_length(tok_read(INPUT.data+e));
+							if(tok_read(INPUT.data+i)!=TOKEN_NUMERAL&&tok_read(INPUT.data+i)!=TOKEN_BACKSPACE){
+								i+=tok_length(tok_read(INPUT.data+i));
 							}
 							//copy remaining buffer over deleted tokens //FIXME broken
-							for(;INPUT.data[c]!=0;e++){
-								INPUT.data[e]=INPUT.data[c];
+							for(;INPUT.data[scan_head]!=0;i++){
+								INPUT.data[i]=INPUT.data[scan_head];
 							}
-							INPUT.data[e]=0;
-							c=e;
+							INPUT.data[i]=0;
+							scan_head=i;
 							break;
 					}
 				}
@@ -145,31 +146,31 @@ int garfield_pos(CONFIG* cfg){
 				//shift parse_head to 0
 				if(INPUT.parse_head!=INPUT.data){
 					head_offset=INPUT.parse_head-INPUT.data;
-					active_token=c-head_offset;
-					for(c=0;INPUT.parse_head[c]!=0;c++){
-						INPUT.data[c]=INPUT.parse_head[c];
+					active_token=scan_head-head_offset;
+					for(scan_head=0;INPUT.parse_head[scan_head]!=0;scan_head++){
+						INPUT.data[scan_head]=INPUT.parse_head[scan_head];
 					}
-					INPUT.data[c]=0;
-					offset=c;
+					INPUT.data[scan_head]=0;
+					read_offset=scan_head;
 				}
 				else{
 					head_offset=0;
-					offset=strlen(INPUT.data);
-					active_token=c;
+					read_offset=strlen(INPUT.data);
+					active_token=scan_head;
 				}
 				
 				if(cfg->verbosity>3){
 					fprintf(stderr, "parse_head offset is %d, active token is %d\n",head_offset, active_token);
 					fprintf(stderr, "Buffer after processing: \"%s\"\n", INPUT.data);
-					fprintf(stderr, "Current input offset is %d\n", offset);
+					fprintf(stderr, "Current read offset is %d\n", read_offset);
 				}
 			}
-			else if(cfg->connections[i].fd<0){
+			else if(cfg->connections[conn_it].fd<0){
 				//reconnect lost connection
 				if(cfg->verbosity>2){
-					fprintf(stderr, "Reconnecting connection %d\n",i);
+					fprintf(stderr, "Reconnecting connection %d\n",conn_it);
 				}
-				cfg->connections[i].fd=tcp_connect(cfg->connections[i].host, cfg->connections[i].port);
+				cfg->connections[conn_it].fd=tcp_connect(cfg->connections[conn_it].host, cfg->connections[conn_it].port);
 			}
 		}
 	}
