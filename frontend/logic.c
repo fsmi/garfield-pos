@@ -4,7 +4,7 @@
 int garfield_pos(CONFIG* cfg){
 	struct timeval tv;
 	fd_set readfds;
-	int fd_max, i,  error, bytes, read_offset=0, active_token=0, head_offset;
+	int fd_max, i, c, error, bytes, read_offset=0, active_token=0, head_offset;
 	int conn_it, scan_head;
 	INPUT_TOKEN token;
 	TRANSITION_RESULT trans;
@@ -133,9 +133,9 @@ int garfield_pos(CONFIG* cfg){
 							if(tok_read(INPUT.data+i)!=TOKEN_NUMERAL&&tok_read(INPUT.data+i)!=TOKEN_BACKSPACE){
 								i+=tok_length(tok_read(INPUT.data+i));
 							}
-							//copy remaining buffer over deleted tokens //FIXME broken
-							for(;INPUT.data[scan_head]!=0;i++){
-								INPUT.data[i]=INPUT.data[scan_head];
+							//copy remaining buffer over deleted tokens
+							for(c=0;INPUT.data[scan_head+c]!=0;c++){
+								INPUT.data[i+c]=INPUT.data[scan_head+c];
 							}
 							INPUT.data[i]=0;
 							scan_head=i;
