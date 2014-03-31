@@ -37,7 +37,7 @@ TRANSITION_RESULT state_barcode(INPUT_TOKEN token, CONFIG* cfg){
 			}
 			
 			if(item.id<=0){
-				printf(">Not recognized\n");
+				printf("Not recognized\n");
 				portable_sleep(1000);
 			}
 
@@ -75,7 +75,7 @@ TRANSITION_RESULT state_plu(INPUT_TOKEN token, CONFIG* cfg){
 			}
 			
 			if(item.id<=0){
-				printf("\r\n>Not recognized\n");
+				printf("\r\nNot recognized\n");
 				portable_sleep(1000);
 			}
 
@@ -165,7 +165,7 @@ TRANSITION_RESULT state_storno(INPUT_TOKEN token, CONFIG* cfg){
 			}
 			
 			if(item.id<=0){
-				printf("\r\n>Not recognized\n");
+				printf("\r\nNot recognized\n");
 				portable_sleep(1000);
 			}
 			else{
@@ -215,7 +215,7 @@ TRANSITION_RESULT state_pay(INPUT_TOKEN token, CONFIG* cfg){
 			user=db_query_user(cfg, user.unixid);
 
 			if(user.unixid<=0){
-				printf(">Not recognized\n");
+				printf("Not recognized\n");
 				portable_sleep(1000);
 				res.state=STATE_DISPLAY;
 				res.action=TOKEN_CONSUME;
@@ -270,22 +270,22 @@ TRANSITION_RESULT transition(POS_STATE state, INPUT_TOKEN token, CONFIG* cfg){
 void state_enter(POS_STATE s){
 	switch(s){
 		case STATE_IDLE:
-			printf("\f> ** GarfieldPOS ** \n");
+			printf("\f ** GarfieldPOS **\n");
 			break;
 		case STATE_BARCODE:
-			printf("\f>Scanning...\n");
+			printf("\fScanning...\n");
 			break;
 		case STATE_PLU:
-			printf("\f>PLU: ");
+			printf("\fPLU: ");
 			break;
 		case STATE_DISPLAY:
-			printf("\f>Last item: %.2f\r\n>%3d Total: %.2f\n", (POS.items>0)?POS.cart[POS.items-1].price:0.f, POS.items, cart_get_total());
+			printf("\fLast item: %.2f\r\n%3d Total: %.2f\n", (POS.items>0)?POS.cart[POS.items-1].price:0.f, POS.items, cart_get_total());
 			break;
 		case STATE_STORNO:
-			printf("\f>Storno: ");
+			printf("\fStorno: ");
 			break;
 		case STATE_PAY:
-			printf("\f>UID: ");
+			printf("\fUID: ");
 			break;
 	}
 	fflush(stdout);

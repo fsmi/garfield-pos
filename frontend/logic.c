@@ -20,7 +20,7 @@ int garfield_pos(CONFIG* cfg){
 	INPUT.parse_head=INPUT.data;
 
 	//FIXME handle output via tcp
-	printf("\f>GarfieldPOS v%s\n",VERSION);
+	printf("\fGarfieldPOS v%s\n",VERSION);
 	portable_sleep(1000);
 	state_enter(POS.state);
 
