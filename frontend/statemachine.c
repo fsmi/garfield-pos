@@ -231,7 +231,7 @@ TRANSITION_RESULT state_pay(INPUT_TOKEN token, CONFIG* cfg){
 				}
 			}
 
-			printf(">%s    -%.2f\n", user.name, cart_get_total());
+			printf("%s    -%.2f\n", user.name, cart_get_total());
 			portable_sleep(1000);
 
 			POS.items=0;
