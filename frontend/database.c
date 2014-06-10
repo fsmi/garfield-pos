@@ -5,7 +5,15 @@ bool db_conn_begin(CONFIG* cfg){
 		}
 		return pq_connect(&(cfg->db));
 	}
-	return cfg->db.conn!=NULL;
+
+	switch(PQstatus(cfg->db.conn)){
+		case CONNECTION_OK:
+			return true;
+		case CONNECTION_BAD:
+			printf("Database connection lost\n");
+			return false;
+	}
+	return false;
 }
 
 void db_conn_end(CONFIG* cfg){
