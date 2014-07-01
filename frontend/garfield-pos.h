@@ -94,6 +94,8 @@ struct {
 	int items_allocated;
 	int items;
 	bool shutdown;
+	unsigned transactions;
+	unsigned sold_items;
 } POS;
 
 struct {

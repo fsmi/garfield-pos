@@ -229,12 +229,20 @@ TRANSITION_RESULT state_pay(INPUT_TOKEN token, CONFIG* cfg){
 						fprintf(stderr, "Failed to buy snack %d\n", POS.cart[i].id);
 					}
 				}
+				else{
+					POS.sold_items++;
+				}
 			}
 
 			printf("%s    -%.2f\n", user.name, cart_get_total());
 			portable_sleep(1000);
 
 			POS.items=0;
+			POS.transactions++;
+			if(cfg->verbosity>2){
+				fprintf(stderr, "Processed %d transactions, sold %d items\n", POS.transactions, POS.sold_items);
+			}
+
 			res.state=STATE_IDLE;
 			res.action=TOKEN_CONSUME;
 			break;

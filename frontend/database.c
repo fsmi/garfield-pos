@@ -10,8 +10,12 @@ bool db_conn_begin(CONFIG* cfg){
 		case CONNECTION_OK:
 			return true;
 		case CONNECTION_BAD:
-			printf("Database connection lost\n");
+			printf("\r\nDatabase connection lost\n");
 			return false;
+		default:
+			if(cfg->verbosity>0){
+				fprintf(stderr, "Invalid database status returned\n");
+			}
 	}
 	return false;
 }
