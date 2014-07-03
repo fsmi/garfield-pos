@@ -22,7 +22,8 @@ typedef enum /*_LOGIC_STATE*/ {
 	STATE_PLU,
 	STATE_DISPLAY,
 	STATE_STORNO,
-	STATE_PAY
+	STATE_PAY,
+	STATE_DEBUG
 } POS_STATE;
 
 typedef enum /*_INPUT_TOKEN*/ {

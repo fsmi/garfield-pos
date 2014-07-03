@@ -256,6 +256,12 @@ TRANSITION_RESULT state_pay(INPUT_TOKEN token, CONFIG* cfg){
 	return res;
 }
 
+TRANSITION_RESULT state_debug(INPUT_TOKEN token, CONFIG* cfg){
+	TRANSITION_RESULT res={STATE_IDLE, TOKEN_CONSUME, false};
+	
+	return res;
+}
+
 TRANSITION_RESULT transition(POS_STATE state, INPUT_TOKEN token, CONFIG* cfg){
 	switch(state){
 		case STATE_IDLE:
@@ -270,6 +276,8 @@ TRANSITION_RESULT transition(POS_STATE state, INPUT_TOKEN token, CONFIG* cfg){
 			return state_storno(token, cfg);
 		case STATE_PAY:
 			return state_pay(token, cfg);
+		case STATE_DEBUG:
+			return state_debug(token, cfg);
 	}
 	TRANSITION_RESULT def={STATE_IDLE, TOKEN_DISCARD, false};
 	return def;
@@ -295,6 +303,9 @@ void state_enter(POS_STATE s){
 		case STATE_PAY:
 			printf("\fUID: ");
 			break;
+		case STATE_DEBUG:
+			printf("\fTX: %d | Items: %d", POS.transactions, POS.sold_items);
+			break;
 	}
 	fflush(stdout);
 }
@@ -313,6 +324,8 @@ const char* state_dbg_string(POS_STATE s){
 			return "STATE_STORNO";
 		case STATE_PAY:
 			return "STATE_PAY";
+		case STATE_DEBUG:
+			return "STATE_DEBUG";
 	}
 	return "UNKNOWN";
 }
