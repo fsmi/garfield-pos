@@ -230,6 +230,7 @@ TRANSITION_RESULT state_pay(INPUT_TOKEN token, CONFIG* cfg){
 				}
 				else{
 					POS.sold_items++;
+					POS.sales_volume+=POS.cart[i].price;
 				}
 			}
 
@@ -303,7 +304,7 @@ void state_enter(POS_STATE s){
 			printf("\fUID: ");
 			break;
 		case STATE_DEBUG:
-			printf("\fTX: %d | Items: %d", POS.transactions, POS.sold_items);
+			printf("\f%d TX %d IT\r\nVol %0.2f\n", POS.transactions, POS.sold_items, POS.sales_volume);
 			break;
 	}
 	fflush(stdout);

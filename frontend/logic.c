@@ -17,6 +17,7 @@ int garfield_pos(CONFIG* cfg){
 	POS.shutdown=false;
 	POS.transactions=0;
 	POS.sold_items=0;
+	POS.sales_volume=0.0;
 
 	memset(INPUT.data, 0, sizeof(INPUT.data));
 	INPUT.parse_head=INPUT.data;

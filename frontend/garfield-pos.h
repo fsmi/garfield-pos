@@ -97,6 +97,7 @@ struct {
 	bool shutdown;
 	unsigned transactions;
 	unsigned sold_items;
+	double sales_volume;
 } POS;
 
 struct {
