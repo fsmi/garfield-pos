@@ -12,6 +12,9 @@ TRANSITION_RESULT state_idle(INPUT_TOKEN token, CONFIG* cfg){
 			res.state=STATE_BARCODE;
 			res.action=TOKEN_KEEP;
 			break;
+		case TOKEN_BACKSPACE:
+			res.state=STATE_DEBUG;
+			break;
 		default:
 			return res;
 	}
