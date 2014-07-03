@@ -2,7 +2,7 @@
 #include "cart.c"
 
 TRANSITION_RESULT state_idle(INPUT_TOKEN token, CONFIG* cfg){
-	TRANSITION_RESULT res={STATE_IDLE, TOKEN_DISCARD, false};
+	TRANSITION_RESULT res={STATE_IDLE, TOKEN_CONSUME, false};
 
 	switch(token){
 		case TOKEN_PLU:
@@ -93,7 +93,7 @@ TRANSITION_RESULT state_plu(INPUT_TOKEN token, CONFIG* cfg){
 }
 
 TRANSITION_RESULT state_display(INPUT_TOKEN token, CONFIG* cfg){
-	TRANSITION_RESULT res={STATE_DISPLAY, TOKEN_DISCARD, false};
+	TRANSITION_RESULT res={STATE_DISPLAY, TOKEN_CONSUME, false};
 	CART_ITEM item;
 
 	switch(token){
@@ -106,16 +106,13 @@ TRANSITION_RESULT state_display(INPUT_TOKEN token, CONFIG* cfg){
 			break;
 		case TOKEN_CANCEL:
 			POS.items=0;
-			res.action=TOKEN_CONSUME;
 			res.state=STATE_IDLE;
 			break;
 		case TOKEN_STORNO:
 			res.state=STATE_STORNO;
-			res.action=TOKEN_CONSUME;
 			break;
 		case TOKEN_PAY:
 			res.state=STATE_PAY;
-			res.action=TOKEN_CONSUME;
 			break;
 		case TOKEN_ADD:
 			if(POS.items>0){
@@ -126,7 +123,6 @@ TRANSITION_RESULT state_display(INPUT_TOKEN token, CONFIG* cfg){
 			else if(cfg->verbosity>2){
 				fprintf(stderr, "No item to be duplicated\n");
 			}
-			res.action=TOKEN_CONSUME;
 			break;
 		default:
 			return res;
