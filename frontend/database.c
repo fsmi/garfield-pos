@@ -10,7 +10,8 @@ bool db_conn_begin(CONFIG* cfg){
 		case CONNECTION_OK:
 			return true;
 		case CONNECTION_BAD:
-			printf("\r\nDatabase connection lost\n");
+			printf("\r\nDatabase disconnect\n");
+			portable_sleep(1000)
 			return false;
 		default:
 			if(cfg->verbosity>0){
