@@ -11,7 +11,7 @@ bool db_conn_begin(CONFIG* cfg){
 			return true;
 		case CONNECTION_BAD:
 			printf("\r\nDatabase disconnect\n");
-			portable_sleep(1000)
+			portable_sleep(1000);
 			printf("\f");
 			return false;
 		default:
