@@ -12,8 +12,17 @@ bool db_conn_begin(CONFIG* cfg){
 		case CONNECTION_BAD:
 			printf("\r\nDatabase disconnect\n");
 			portable_sleep(1000);
-			printf("\f");
-			return false;
+			printf("\fReconnecting....");
+			if(pq_connect(&(cfg->db))){
+				portable_sleep(1000);
+				printf("\f");
+				return true;
+			}
+			else{
+				portable_sleep(1000);
+				printf("\f");
+				return false;
+			}
 		default:
 			if(cfg->verbosity>0){
 				fprintf(stderr, "Invalid database status returned\n");
