@@ -51,18 +51,22 @@ int garfield_pos(CONFIG* cfg){
 
 		//process input
 		if(cfg->verbosity>3){
-			fprintf(stderr, "Input ready from %d descriptors\n", error);
+			fprintf(stderr, "Input ready from %d descriptors, read_offset %d\n", error, read_offset);
 		}
 
 		for(conn_it=0;conn_it<cfg->connection_count;conn_it++){
 			if(cfg->connections[conn_it].fd>0&&FD_ISSET(cfg->connections[conn_it].fd, &readfds)){
-				bytes=recv(cfg->connections[conn_it].fd, INPUT.data+read_offset, sizeof(INPUT.data)-read_offset, 0);
+				bytes=recv(cfg->connections[conn_it].fd, INPUT.data+read_offset, sizeof(INPUT.data)-read_offset-1, 0);
 				
+				if(cfg->verbosity>3){
+					fprintf(stderr, "Buffer length is %lu, sentinel byte %02x, first byte %02x\n", sizeof(INPUT.data), INPUT.data[sizeof(INPUT.data)-1], INPUT.data[0]);
+				}
+
 				if(bytes<0){
 					perror("read_tcp");
 				}
 
-				if(bytes==0){
+				if(bytes==0&&read_offset<(sizeof(INPUT.data)-1)){
 					if(cfg->verbosity>2){
 						fprintf(stderr, "Connection %d lost, reconnecting with next iteration\n", conn_it);
 					}
@@ -79,12 +83,14 @@ int garfield_pos(CONFIG* cfg){
 
 				if(cfg->verbosity>3){
 					fprintf(stderr, "Current buffer: \"%s\"\n", INPUT.data);
+					fprintf(stderr, "active_token is at %d, begins with %02x\n", active_token, INPUT.data[active_token]);
 				}
 				
 				INPUT.parse_head=INPUT.data;
 				token=TOKEN_INVALID;
 				scan_head=active_token;
 
+				//FIXME this condition might be problematic with the buffer fixup below
 				while(INPUT.data[scan_head]!=0){
 					//recognize token
 					token=tok_read(INPUT.data+scan_head);
@@ -144,6 +150,15 @@ int garfield_pos(CONFIG* cfg){
 							scan_head=i;
 							break;
 					}
+				}
+
+				//fix input buffer overrun
+				if(active_token==scan_head&&token!=TOKEN_INCOMPLETE){
+					//FIXME test this
+					if(cfg->verbosity>3){
+						fprintf(stderr, "Resetting buffer\n");
+					}
+					INPUT.parse_head+=active_token;
 				}
 
 				//shift parse_head to 0
