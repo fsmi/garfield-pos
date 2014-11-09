@@ -264,6 +264,8 @@ TRANSITION_RESULT state_credit(INPUT_TOKEN token, CONFIG* cfg){
 	GARFIELD_USER user;
 	
 	switch(token){
+		case TOKEN_COMMA:
+		case TOKEN_MINUS:
 		case TOKEN_NUMERAL:
 			printf("%c",INPUT.active_token[0]);
 			res.action=TOKEN_KEEP;
@@ -314,11 +316,16 @@ TRANSITION_RESULT state_credit(INPUT_TOKEN token, CONFIG* cfg){
 						fprintf(stderr, "Transaction delta is %f\n", delta);
 					}
 					
-					if(db_delta_transaction(cfg, user, delta)){
-						printf("\rTransaction cleared\n");
+					if(fabs(delta)>0.01){
+						if(db_delta_transaction(cfg, user, delta)){
+							printf("\rTransaction cleared\n");
+						}
+						else{
+							printf("\rTransaction failed\n");
+						}
 					}
 					else{
-						printf("\rTransaction failed\n");
+						printf("\rAll is well :)\n");
 					}
 					portable_sleep(1000);	
 

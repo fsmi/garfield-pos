@@ -16,6 +16,14 @@ INPUT_TOKEN tok_read(char* input){
 		return TOKEN_NUMERAL;
 	}
 
+	if(!strncmp(input, ".", 1)){
+		return TOKEN_COMMA;
+	}
+
+	if(!strncmp(input, "-", 1)){
+		return TOKEN_MINUS;
+	}
+
 	if(!strncmp(input, "PAY\r\n", 5)){
 		return TOKEN_PAY;
 	}
@@ -91,6 +99,8 @@ int tok_length(INPUT_TOKEN token){
 		case TOKEN_BACKSPACE:
 			return 9;
 		case TOKEN_NUMERAL:
+		case TOKEN_MINUS:
+		case TOKEN_COMMA:
 			return 1;
 		case TOKEN_INCOMPLETE:
 			return 0;
@@ -134,6 +144,10 @@ const char* tok_dbg_string(INPUT_TOKEN t){
 			return "TOKEN_PAY";
 		case TOKEN_PLU:
 			return "TOKEN_PLU";
+		case TOKEN_COMMA:
+			return "TOKEN_COMMA";
+		case TOKEN_MINUS:
+			return "TOKEN_MINUS";
 		case TOKEN_STORNO:
 			return "TOKEN_STORNO";
 		case TOKEN_CANCEL:
