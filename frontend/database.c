@@ -78,13 +78,15 @@ bool db_buy_snack(CONFIG* cfg, GARFIELD_USER user, CART_ITEM snack){
 }
 
 GARFIELD_USER db_query_user(CONFIG* cfg, int unixid){
-	//TODO query account balance
 	static const char* QUERY_USER_BY_UNIXID="SELECT print_account_no AS unixid, \
 							users.user_id AS accountno, \
-							user_name \
+							user_name, \
+							balance \
 						FROM garfield.print_accounts \
 						JOIN garfield.users \
 							ON print_accounts.user_id=users.user_id \
+						JOIN garfield.balances \
+							ON balances.user=users.user_id \
 						WHERE print_account_no=$1::integer";
 
 	static const char* QUERY_ACCOUNT_BY_USERNAME="SELECT user_id FROM garfield.users WHERE user_name = $1";
@@ -116,6 +118,7 @@ GARFIELD_USER db_query_user(CONFIG* cfg, int unixid){
 				rv.unixid=strtoul(PQgetvalue(result, 0, 0), NULL, 10);
 				rv.account_no=strtoul(PQgetvalue(result, 0, 1), NULL, 10);
 				strncpy(rv.name, PQgetvalue(result, 0, 2), MAX_USERNAME_LENGTH);
+				rv.balance=strtod(PQgetvalue(result, 0, 3), NULL);
 				if(cfg->verbosity>2){
 					fprintf(stderr, "Resolved to user %s\n", rv.name);
 				}

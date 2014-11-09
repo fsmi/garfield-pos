@@ -256,24 +256,70 @@ TRANSITION_RESULT state_pay(INPUT_TOKEN token, CONFIG* cfg){
 
 TRANSITION_RESULT state_credit(INPUT_TOKEN token, CONFIG* cfg){
 	TRANSITION_RESULT res={STATE_CREDIT, TOKEN_DISCARD, false};
-	int last_numeral, i;
+	char* scan_head;
+	int enters_read=0;
+	INPUT_TOKEN scan_token=TOKEN_INCOMPLETE;
+	GARFIELD_USER user;
 	
 	switch(token){
 		case TOKEN_NUMERAL:
-			last_numeral=tok_lasttype_offset(TOKEN_NUMERAL);
-			printf("%c",INPUT.parse_head[last_numeral]);
+			printf("%c",INPUT.active_token[0]);
 			res.action=TOKEN_KEEP;
 			break;
 		case TOKEN_ENTER:
-			//TODO
-			//scan through input buffer
-			//first enter -> read uid, query info, print, KEEP
-			//second enter -> read delta, submit, print, CONSUME
+			//scan input buffer for enter tokens
+			for(scan_head=INPUT.parse_head;scan_head<INPUT.active_token;scan_head+=tok_length(scan_token)){
+				scan_token=tok_read(scan_head);
+				if(scan_token==TOKEN_ENTER){
+					enters_read++;
+				}
+			}
+
+			switch(enters_read){
+				case 0:
+					printf("\n");
+
+					//read uid
+					user.unixid=strtoul(INPUT.parse_head, NULL, 10);
+					
+					//query info
+					user=db_query_user(cfg, user.unixid);
+
+					if(user.unixid<=0){
+						printf("Not recognized\n");
+						portable_sleep(1000);
+						res.state=STATE_IDLE;
+						res.action=TOKEN_CONSUME;
+						break;
+					}
+
+					//print
+					//TODO
+
+					res.action=TOKEN_KEEP;
+					break;
+				case 1:
+					//read delta
+					//submit transaction
+					//print
+					res.action=TOKEN_CONSUME;
+					res.state=STATE_IDLE;
+					break;
+				default:
+					if(cfg->verbosity>1){
+						fprintf(stderr, "Invalid sequence in STATE_CREDIT\n");
+					}
+					res.state=STATE_IDLE;
+					res.action=TOKEN_CONSUME;
+					break;
+			}
 			break;
 		case TOKEN_CANCEL:
 			res.action=TOKEN_CONSUME;
 			res.state=STATE_IDLE;
 			break;
+		default:
+			return res;
 	}
 	return res;
 }
