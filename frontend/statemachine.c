@@ -15,6 +15,8 @@ TRANSITION_RESULT state_idle(INPUT_TOKEN token, CONFIG* cfg){
 		case TOKEN_BACKSPACE:
 			res.state=STATE_DEBUG;
 			break;
+		case TOKEN_PAY:
+			res.state=STATE_CREDIT;
 		default:
 			return res;
 	}
@@ -256,6 +258,30 @@ TRANSITION_RESULT state_pay(INPUT_TOKEN token, CONFIG* cfg){
 	return res;
 }
 
+TRANSITION_RESULT state_credit(INPUT_TOKEN token, CONFIG* cfg){
+	TRANSITION_RESULT res={STATE_CREDIT, TOKEN_DISCARD, false};
+	int last_numeral, i;
+	
+	switch(token){
+		case TOKEN_NUMERAL:
+			last_numeral=tok_lasttype_offset(TOKEN_NUMERAL);
+			printf("%c",INPUT.parse_head[last_numeral]);
+			res.action=TOKEN_KEEP;
+			break;
+		case TOKEN_ENTER:
+			//TODO
+			//scan through input buffer
+			//first enter -> read uid, query info, print, KEEP
+			//second enter -> read delta, submit, print, CONSUME
+			break;
+		case TOKEN_CANCEL:
+			res.action=TOKEN_CONSUME;
+			res.state=STATE_IDLE;
+			break;
+	}
+	return res;
+}
+
 TRANSITION_RESULT state_debug(INPUT_TOKEN token, CONFIG* cfg){
 	TRANSITION_RESULT res={STATE_IDLE, TOKEN_CONSUME, false};
 	
@@ -278,6 +304,8 @@ TRANSITION_RESULT transition(POS_STATE state, INPUT_TOKEN token, CONFIG* cfg){
 			return state_pay(token, cfg);
 		case STATE_DEBUG:
 			return state_debug(token, cfg);
+		case STATE_CREDIT:
+			return state_credit(token, cfg);
 	}
 	TRANSITION_RESULT def={STATE_IDLE, TOKEN_DISCARD, false};
 	return def;
@@ -306,6 +334,9 @@ void state_enter(POS_STATE s){
 		case STATE_DEBUG:
 			printf("\f%d TX %d IT\r\nVol %0.2f\n", POS.transactions, POS.sold_items, POS.sales_volume);
 			break;
+		case STATE_CREDIT:
+			printf("\fUID: ");
+			break;
 	}
 	fflush(stdout);
 }
@@ -326,6 +357,8 @@ const char* state_dbg_string(POS_STATE s){
 			return "STATE_PAY";
 		case STATE_DEBUG:
 			return "STATE_DEBUG";
+		case STATE_CREDIT:
+			return "STATE_CREDIT";
 	}
 	return "UNKNOWN";
 }

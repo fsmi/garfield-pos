@@ -4,7 +4,7 @@
 #define PGRES_SSLMODE "require"
 #define INPUT_BUFFER_LENGTH 128
 #define MAX_USERNAME_LENGTH 128
-#define USER_LOOKUP_FALLBACK_ENABLED
+//#define USER_LOOKUP_FALLBACK_ENABLED
 
 #ifdef USER_LOOKUP_FALLBACK_ENABLED
 	#include <sys/types.h>
@@ -23,7 +23,8 @@ typedef enum /*_LOGIC_STATE*/ {
 	STATE_DISPLAY,
 	STATE_STORNO,
 	STATE_PAY,
-	STATE_DEBUG
+	STATE_DEBUG,
+	STATE_CREDIT
 } POS_STATE;
 
 typedef enum /*_INPUT_TOKEN*/ {
@@ -60,6 +61,7 @@ typedef struct /*_CART_SNACK_ITEM*/ {
 typedef struct /*_GARFIELD_USER*/ {
 	int unixid;
 	int account_no;
+	double balance;
 	char name[MAX_USERNAME_LENGTH+1];
 } GARFIELD_USER;
 

@@ -78,6 +78,7 @@ bool db_buy_snack(CONFIG* cfg, GARFIELD_USER user, CART_ITEM snack){
 }
 
 GARFIELD_USER db_query_user(CONFIG* cfg, int unixid){
+	//TODO query account balance
 	static const char* QUERY_USER_BY_UNIXID="SELECT print_account_no AS unixid, \
 							users.user_id AS accountno, \
 							user_name \
