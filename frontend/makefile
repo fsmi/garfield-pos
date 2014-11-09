@@ -7,7 +7,7 @@ endif
 .PHONY: all ldebug ldebug-full debug clean
 
 all:
-	$(CC) -Wall -g $(PG_INCLUDES) garfield-pos.c -o garfield-pos -lpq
+	$(CC) -Wall -g $(PG_INCLUDES) garfield-pos.c -o garfield-pos -lpq -lm
 
 ldebug:
 	valgrind --leak-check=full  ./garfield-pos -vvvv -f local.conf

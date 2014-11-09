@@ -77,11 +77,55 @@ bool db_buy_snack(CONFIG* cfg, GARFIELD_USER user, CART_ITEM snack){
 	return rv;
 }
 
+bool db_delta_transaction(CONFIG* cfg, GARFIELD_USER user, double delta){
+	static const char* INSERT_DELTA_TRANSACTION="SELECT garfield.delta_transaction_create($1::integer, $2::real)";
+	char delta_str[20];
+	bool rv=false;
+
+	if(!db_conn_begin(cfg)){
+		if(cfg->verbosity>0){
+			fprintf(stderr, "Failed to begin database communication\n");
+		}
+		return false;
+	}
+	
+	int user_id=htonl(user.account_no);
+	snprintf(delta_str, sizeof(delta_str)-1, "%.2f", delta);
+
+	const char* values[2]={(char*) &user_id, delta_str};
+	int lengths[2]={sizeof(user_id), strlen(delta_str)};
+	int binary[2]={1,0};
+
+	PGresult* result=PQexecParams(cfg->db.conn, INSERT_DELTA_TRANSACTION, 2, NULL, values, lengths, binary, 0);
+	if(!result){
+		if(cfg->verbosity>0){
+			fprintf(stderr, "Database failed hard at db_delta_transaction\n");
+		}
+		return false;
+	}
+	if(PQresultStatus(result)==PGRES_TUPLES_OK){
+		switch(PQgetvalue(result, 0, 0)[0]){
+			case 't':
+				rv=true;
+				break;
+			default:
+				rv=false;
+				break;
+		}
+	}
+	else if(cfg->verbosity>1){
+		fprintf(stderr, "Failed to create delta transaction for user %d, delta %f (%s)\n", user.account_no, delta, PQresultErrorMessage(result));
+		rv=false;
+	}
+	PQclear(result);
+	return rv;
+}
+
 GARFIELD_USER db_query_user(CONFIG* cfg, int unixid){
 	static const char* QUERY_USER_BY_UNIXID="SELECT print_account_no AS unixid, \
 							users.user_id AS accountno, \
 							user_name, \
-							balance \
+							balances.balance \
 						FROM garfield.print_accounts \
 						JOIN garfield.users \
 							ON print_accounts.user_id=users.user_id \

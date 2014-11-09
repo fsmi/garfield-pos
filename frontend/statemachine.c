@@ -1,5 +1,6 @@
 #include "database.c"
 #include "cart.c"
+#include <math.h>
 
 TRANSITION_RESULT state_idle(INPUT_TOKEN token, CONFIG* cfg){
 	TRANSITION_RESULT res={STATE_IDLE, TOKEN_CONSUME, false};
@@ -258,6 +259,7 @@ TRANSITION_RESULT state_credit(INPUT_TOKEN token, CONFIG* cfg){
 	TRANSITION_RESULT res={STATE_CREDIT, TOKEN_DISCARD, false};
 	char* scan_head;
 	int enters_read=0;
+	double delta;
 	INPUT_TOKEN scan_token=TOKEN_INCOMPLETE;
 	GARFIELD_USER user;
 	
@@ -275,33 +277,51 @@ TRANSITION_RESULT state_credit(INPUT_TOKEN token, CONFIG* cfg){
 				}
 			}
 
+			//read uid
+			user.unixid=strtoul(INPUT.parse_head, NULL, 10);
+					
+			//query info
+			user=db_query_user(cfg, user.unixid);
+
+			if(user.unixid<=0){
+				printf("Not recognized\n");
+				portable_sleep(1000);
+				res.state=STATE_IDLE;
+				res.action=TOKEN_CONSUME;
+				break;
+			}
+
 			switch(enters_read){
 				case 0:
-					printf("\n");
-
-					//read uid
-					user.unixid=strtoul(INPUT.parse_head, NULL, 10);
-					
-					//query info
-					user=db_query_user(cfg, user.unixid);
-
-					if(user.unixid<=0){
-						printf("Not recognized\n");
-						portable_sleep(1000);
-						res.state=STATE_IDLE;
-						res.action=TOKEN_CONSUME;
-						break;
-					}
-
 					//print
-					//TODO
+					printf(" @ %5.02f %c\r\nDelta: ", fabs(user.balance), (user.balance>0)?'H':'S');
 
 					res.action=TOKEN_KEEP;
 					break;
 				case 1:
 					//read delta
+					for(scan_head=INPUT.parse_head;scan_head<INPUT.active_token;scan_head+=tok_length(scan_token)){
+						scan_token=tok_read(scan_head);
+						if(scan_token==TOKEN_ENTER){
+							scan_head+=tok_length(scan_token);
+							break;
+						}
+					}
+				
 					//submit transaction
-					//print
+					delta=strtod(scan_head, NULL);
+					if(cfg->verbosity>2){
+						fprintf(stderr, "Transaction delta is %f\n", delta);
+					}
+					
+					if(db_delta_transaction(cfg, user, delta)){
+						printf("\rTransaction cleared\n");
+					}
+					else{
+						printf("\rTransaction failed\n");
+					}
+					portable_sleep(1000);	
+
 					res.action=TOKEN_CONSUME;
 					res.state=STATE_IDLE;
 					break;
