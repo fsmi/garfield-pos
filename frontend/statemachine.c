@@ -60,7 +60,6 @@ TRANSITION_RESULT state_barcode(INPUT_TOKEN token, CONFIG* cfg){
 
 TRANSITION_RESULT state_plu(INPUT_TOKEN token, CONFIG* cfg){
 	TRANSITION_RESULT res={STATE_PLU, TOKEN_DISCARD, false};
-	int last_numeric;
 	CART_ITEM item;
 
 	switch(token){
@@ -69,8 +68,7 @@ TRANSITION_RESULT state_plu(INPUT_TOKEN token, CONFIG* cfg){
 			res.action=TOKEN_REMOVE;
 			break;
 		case TOKEN_NUMERAL:
-			last_numeric=tok_lasttype_offset(TOKEN_NUMERAL);
-			printf("%c",INPUT.parse_head[last_numeric]);
+			printf("%c",INPUT.active_token[0]);
 			res.action=TOKEN_KEEP;
 			break;
 		case TOKEN_ENTER:
@@ -137,13 +135,12 @@ TRANSITION_RESULT state_display(INPUT_TOKEN token, CONFIG* cfg){
 
 TRANSITION_RESULT state_storno(INPUT_TOKEN token, CONFIG* cfg){
 	TRANSITION_RESULT res={STATE_STORNO, TOKEN_DISCARD, false};
-	int last_numeral, i;
+	int i;
 	CART_ITEM item;
 
 	switch(token){
 		case TOKEN_NUMERAL:
-			last_numeral=tok_lasttype_offset(TOKEN_NUMERAL);
-			printf("%c",INPUT.parse_head[last_numeral]);
+			printf("%c",INPUT.active_token[0]);
 			res.action=TOKEN_KEEP;
 			break;
 		case TOKEN_BACKSPACE:
@@ -197,13 +194,12 @@ TRANSITION_RESULT state_storno(INPUT_TOKEN token, CONFIG* cfg){
 
 TRANSITION_RESULT state_pay(INPUT_TOKEN token, CONFIG* cfg){
 	TRANSITION_RESULT res={STATE_PAY, TOKEN_DISCARD, false};
-	int last_numeral, i;
+	int i;
 	GARFIELD_USER user;
 
 	switch(token){
 		case TOKEN_NUMERAL:
-			last_numeral=tok_lasttype_offset(TOKEN_NUMERAL);
-			printf("%c",INPUT.parse_head[last_numeral]);
+			printf("%c",INPUT.active_token[0]);
 			res.action=TOKEN_KEEP;
 			break;
 		case TOKEN_BACKSPACE:
