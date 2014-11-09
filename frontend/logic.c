@@ -100,6 +100,7 @@ int garfield_pos(CONFIG* cfg){
 					}
 
 					//do transition
+					INPUT.active_token=INPUT.data+scan_head;
 					trans=transition(POS.state, token, cfg);
 					scan_head+=tok_length(token);
 
