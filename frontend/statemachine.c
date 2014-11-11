@@ -296,7 +296,7 @@ TRANSITION_RESULT state_credit(INPUT_TOKEN token, CONFIG* cfg){
 			switch(enters_read){
 				case 0:
 					//print
-					printf(" @ %5.02f %c\r\nDelta: ", fabs(user.balance), (user.balance>0)?'H':'S');
+					printf(" @%6.02f %c\r\nDelta: ", fabs(user.balance), (user.balance>0)?'H':'S');
 
 					res.action=TOKEN_KEEP;
 					break;
@@ -325,7 +325,7 @@ TRANSITION_RESULT state_credit(INPUT_TOKEN token, CONFIG* cfg){
 						}
 					}
 					else{
-						printf("\rAll is well :)\n");
+						printf("\rNothing changed\n");
 					}
 					portable_sleep(1000);	
 
