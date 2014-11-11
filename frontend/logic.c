@@ -154,7 +154,7 @@ int garfield_pos(CONFIG* cfg){
 				}
 
 				//fix input buffer overrun
-				if(active_token==scan_head&&token!=TOKEN_INCOMPLETE){
+				if(active_token==scan_head&&token!=TOKEN_INCOMPLETE&&trans.action!=TOKEN_DISCARD){
 					//FIXME test this
 					if(cfg->verbosity>3){
 						fprintf(stderr, "Resetting buffer\n");
