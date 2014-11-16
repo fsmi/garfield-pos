@@ -1,0 +1,3 @@
+[submodule "kbserver"]
+	path = kbserver
+	url = http://git.services.cbcdn.com/kbserver
