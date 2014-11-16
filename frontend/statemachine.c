@@ -341,6 +341,19 @@ TRANSITION_RESULT state_credit(INPUT_TOKEN token, CONFIG* cfg){
 					break;
 			}
 			break;
+		case TOKEN_BACKSPACE:
+			//pay total (hacky)
+			if(db_delta_transaction(cfg, user, -user.balance)){
+				printf("\rAccount paid\n");
+			}
+			else{
+				printf("\rTransaction failed\n");
+			}
+			portable_sleep(1000);	
+
+			res.action=TOKEN_CONSUME;
+			res.state=STATE_IDLE;
+			break;
 		case TOKEN_CANCEL:
 			res.action=TOKEN_CONSUME;
 			res.state=STATE_IDLE;
