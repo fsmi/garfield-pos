@@ -1,0 +1,290 @@
+--
+-- PostgreSQL database dump
+-- Modified Garfield database for KIF-POS
+--
+
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+--
+-- Name: garfield; Type: SCHEMA; Schema: -; Owner: kifpos
+-- Garfield schema
+--
+
+CREATE SCHEMA garfield;
+COMMENT ON SCHEMA garfield IS 'Kasse des Vertrauens - POS Datenbank';
+SET search_path = garfield, pg_catalog;
+
+--
+-- Name: delta_transaction_create(integer, real); Type: FUNCTION; Schema: garfield
+-- Create a transaction table entry
+--
+
+CREATE FUNCTION delta_transaction_create(param_user_id integer, param_transaction_delta real) RETURNS boolean
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO garfield, pg_temp
+    AS $$DECLARE
+	transaction_type character varying;
+	buy_time timestamp with time zone;
+BEGIN
+	LOCK TABLE transactions IN SHARE MODE;
+	LOCK TABLE users IN SHARE MODE;
+
+	-- Check the account's existence.
+	IF NOT snack_account_exists(param_user_id) THEN
+		RETURN false;
+	END IF;
+
+	--Check delta amount
+	IF (ABS(param_transaction_delta)>100) THEN
+		RETURN false;
+	END IF;
+
+	IF param_transaction_delta<0 THEN
+		transaction_type='WITHDRAW';
+	ELSE
+		transaction_type='DEPOSIT';
+	END IF;
+
+	buy_time = clock_timestamp();
+	
+	INSERT INTO transactions 
+		(transaction_user, transaction_type, transaction_delta,
+		transaction_reference, transaction_timestamp)
+		VALUES (param_user_id, transaction_type, param_transaction_delta,
+		NULL, buy_time);
+	RETURN true;
+END;
+$$;
+
+COMMENT ON FUNCTION delta_transaction_create(param_user_id integer, param_transaction_delta real) IS 'Apply account delta transaction';
+
+
+--
+-- Name: snack_account_exists(integer); Type: FUNCTION; Schema: garfield
+-- Check for account existence
+--
+
+CREATE FUNCTION snack_account_exists(param_user_id integer) RETURNS boolean
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO garfield, pg_temp
+    AS $$DECLARE
+	user_exists integer;
+BEGIN
+	SELECT user_id INTO user_exists FROM users WHERE user_id=param_user_id;
+	IF NOT FOUND THEN
+		RETURN false;
+	END IF;
+	RETURN true;
+END;
+$$;
+
+COMMENT ON FUNCTION snack_account_exists(param_user_id integer) IS 'Snackaccount auf Existenz pruefen';
+
+
+--
+-- Name: snack_buy(integer, integer); Type: FUNCTION; Schema: garfield
+-- Create rows representing Snack sales
+--
+
+CREATE FUNCTION snack_buy(param_user_id integer, param_snack_id integer) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO garfield, pg_temp
+    AS $$
+DECLARE
+	snack garfield.snacks%ROWTYPE;
+	new_transaction_id integer;
+	buy_time timestamp with time zone;
+BEGIN
+	LOCK TABLE transactions IN SHARE MODE;
+	LOCK TABLE users IN SHARE MODE;
+
+	-- Check the account's existence.
+	IF NOT snack_account_exists(param_user_id) THEN
+		RAISE EXCEPTION 'Account % is invalid.', param_user_id;
+	END IF;
+	-- Get the current snack price.
+	SELECT * INTO snack
+		FROM snacks
+		WHERE snack_id = param_snack_id;
+	-- Bail out on non-existing snacks.
+	IF NOT FOUND THEN
+		RAISE EXCEPTION 'Snack % not found.', param_snack_id;
+	END IF;
+	buy_time = clock_timestamp();
+
+	INSERT INTO transactions 
+		(transaction_user, transaction_type, transaction_delta,
+		transaction_reference, transaction_timestamp)
+		VALUES (param_user_id, 'SNACK_SALE', -snack.snack_price,
+		snack.snack_id, buy_time);
+END;
+$$;
+
+COMMENT ON FUNCTION snack_buy(integer, integer) IS 'Sell a snack';
+
+--
+-- Name: snack_create(character varying, character varying, numeric, integer); Type: FUNCTION; Schema: garfield; Owner: kifpos
+-- Register/update a snack
+--
+
+CREATE FUNCTION snack_create(param_snack_name character varying, param_snack_barcode character varying, param_snack_price numeric, param_tax_percentage integer) RETURNS integer
+    LANGUAGE plpgsql SECURITY DEFINER
+    AS $$
+DECLARE
+	new_snack_id integer;
+	snack garfield.snacks%ROWTYPE;
+BEGIN
+
+	SELECT * INTO snack
+		FROM garfield.snacks
+		WHERE snack_barcode = param_snack_barcode;
+	IF FOUND THEN
+		UPDATE garfield.snacks_available SET snack_available=false WHERE snack_id=snack.snack_id;
+		
+	END IF;
+
+INSERT INTO garfield.snacks 
+		(snack_name, snack_barcode, snack_price, tax_percentage)
+		VALUES 
+		(param_snack_name, param_snack_barcode, param_snack_price, param_tax_percentage)
+		RETURNING snack_id INTO new_snack_id;
+		INSERT INTO garfield.snacks_available VALUES (new_snack_id, true);
+		RETURN new_snack_id;
+END
+$$;
+
+COMMENT ON FUNCTION snack_create(param_snack_name character varying, param_snack_barcode character varying, param_snack_price numeric, param_tax_percentage integer) IS 'Create/update a snack';
+
+--
+-- Name: user_create(integer, boolean); Type: FUNCTION; Schema: garfield
+-- Create a system user given a user identifier
+--
+
+CREATE FUNCTION user_create(param_user_id integer, param_user_attendee boolean) RETURNS integer
+    LANGUAGE plpgsql SECURITY DEFINER
+    AS $$
+DECLARE
+	new_user integer;
+BEGIN
+	INSERT INTO garfield.users
+		(user_name)
+		VALUES
+		(param_user_id)
+		RETURNING
+		user_id
+		INTO new_user;
+
+	IF NOT param_user_attendee THEN
+		UPDATE garfield.users SET helfer=true WHERE user_id=new_user;
+	END IF;
+
+	INSERT INTO garfield.print_accounts
+	(print_account_no, user_id)
+	VALUES
+	(param_user_id, new_user);
+
+	RETURN new_user;
+END
+$$;
+
+COMMENT ON FUNCTION user_create(param_user_id integer, param_user_attendee boolean) IS 'Register a new snack account';
+
+SET default_tablespace = '';
+SET default_with_oids = false;
+
+--
+-- Name: users; Type: TABLE; Schema: garfield
+-- User registry
+--
+
+CREATE TABLE users (
+    user_id serial NOT NULL,
+    user_name character varying,
+    helfer boolean DEFAULT false NOT NULL
+);
+
+COMMENT ON TABLE users IS 'System user table';
+ALTER TABLE ONLY users ADD CONSTRAINT users_pkey PRIMARY KEY (user_id);
+
+--
+-- Name: snacks; Type: TABLE; Schema: garfield
+-- Stores basic snack information
+--
+
+CREATE TABLE snacks (
+    snack_id serial NOT NULL,
+    snack_name character varying NOT NULL,
+    snack_barcode character varying NOT NULL,
+    snack_price numeric NOT NULL,
+    location_id integer DEFAULT 1 NOT NULL,
+    snack_timestamp timestamp with time zone DEFAULT clock_timestamp(),
+    tax_percentage integer NOT NULL,
+    CONSTRAINT positive_price CHECK ((snack_price > (0)::numeric))
+);
+
+COMMENT ON TABLE snacks IS 'Basic snack data';
+COMMENT ON COLUMN snacks.location_id IS 'Not used in kif-pos';
+ALTER TABLE ONLY snacks ADD CONSTRAINT snacks_pkey PRIMARY KEY (snack_id);
+
+
+--
+-- Name: transactions; Type: TABLE; Schema: garfield;
+-- User transaction table
+--
+
+CREATE TABLE transactions (
+    transaction_id serial NOT NULL,
+    transaction_user integer NOT NULL,
+    transaction_type text NOT NULL,
+    transaction_delta numeric NOT NULL,
+    transaction_reference integer,
+    transaction_timestamp timestamp with time zone DEFAULT clock_timestamp() NOT NULL
+);
+
+COMMENT ON TABLE transactions IS 'Transaction registry';
+COMMENT ON COLUMN transactions.transaction_type IS 'SNACK, DEPOSIT, WITHDRAW';
+ALTER TABLE ONLY transactions ADD CONSTRAINT transactions_pkey PRIMARY KEY (transaction_id);
+ALTER TABLE ONLY transactions ADD CONSTRAINT user_id_fkey FOREIGN KEY (transaction_user) REFERENCES users(user_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+--
+-- Name: balances; Type: VIEW; Schema: garfield
+-- Balance sheet
+--
+
+CREATE VIEW balances AS
+    SELECT users.user_id AS "user", COALESCE(a.balance, (0)::numeric) AS balance FROM (users LEFT JOIN (SELECT transactions.transaction_user AS "user", sum(transactions.transaction_delta) AS balance FROM transactions GROUP BY transactions.transaction_user) a ON ((a."user" = users.user_id)));
+COMMENT ON VIEW balances IS 'User balances';
+
+--
+-- Name: print_accounts; Type: TABLE; Schema: garfield
+-- Map account identifiers to snack user IDs
+--
+
+CREATE TABLE print_accounts (
+    print_account_no integer NOT NULL,
+    user_id integer NOT NULL,
+    print_account_active boolean DEFAULT true NOT NULL
+);
+
+COMMENT ON TABLE print_accounts IS 'User identifier to system ID mapping table, unfortunately named';
+COMMENT ON COLUMN print_accounts.print_account_no IS 'User identifier';
+COMMENT ON COLUMN print_accounts.user_id IS 'System user identifier';
+ALTER TABLE ONLY print_accounts ADD CONSTRAINT print_accounts_pkey PRIMARY KEY (print_account_no);
+ALTER TABLE ONLY print_accounts ADD CONSTRAINT print_accounts_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+--
+-- Name: snacks_available; Type: TABLE; Schema: garfield
+-- Snack availability information
+--
+
+CREATE TABLE snacks_available (
+    snack_id integer NOT NULL,
+    snack_available boolean DEFAULT true NOT NULL
+);
+
+COMMENT ON TABLE snacks_available IS 'Snack availability information';
+ALTER TABLE ONLY snacks_available ADD CONSTRAINT snacks_available_pkey PRIMARY KEY (snack_id);
+ALTER TABLE ONLY snacks_available ADD CONSTRAINT snacks_available_snack_id_fkey FOREIGN KEY (snack_id) REFERENCES snacks(snack_id) ON UPDATE CASCADE ON DELETE CASCADE;
