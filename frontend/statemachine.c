@@ -270,7 +270,12 @@ TRANSITION_RESULT state_credit(INPUT_TOKEN token, CONFIG* cfg){
 			printf("%c",INPUT.active_token[0]);
 			res.action=TOKEN_KEEP;
 			break;
+		case TOKEN_BACKSPACE:
+			printf("\b \b");
+			res.action=TOKEN_REMOVE;
+			break;
 		case TOKEN_ENTER:
+		case TOKEN_ADD:
 			//scan input buffer for enter tokens
 			for(scan_head=INPUT.parse_head;scan_head<INPUT.active_token;scan_head+=tok_length(scan_token)){
 				scan_token=tok_read(scan_head);
@@ -295,23 +300,32 @@ TRANSITION_RESULT state_credit(INPUT_TOKEN token, CONFIG* cfg){
 
 			switch(enters_read){
 				case 0:
+					//ignore ADD
+					if(token==TOKEN_ADD){
+						break;
+					}
 					//print
 					printf(" @%6.02f %c\r\nDelta: ", fabs(user.balance), (user.balance>0)?'H':'S');
 
 					res.action=TOKEN_KEEP;
 					break;
 				case 1:
-					//read delta
-					for(scan_head=INPUT.parse_head;scan_head<INPUT.active_token;scan_head+=tok_length(scan_token)){
-						scan_token=tok_read(scan_head);
-						if(scan_token==TOKEN_ENTER){
-							scan_head+=tok_length(scan_token);
-							break;
+					//read delta if enter
+					if(token==TOKEN_ADD){
+						delta=-user.balance;
+					}
+					else{
+						for(scan_head=INPUT.parse_head;scan_head<INPUT.active_token;scan_head+=tok_length(scan_token)){
+							scan_token=tok_read(scan_head);
+							if(scan_token==TOKEN_ENTER){
+								scan_head+=tok_length(scan_token);
+								break;
+							}
 						}
+						delta=strtod(scan_head, NULL);
 					}
 				
 					//submit transaction
-					delta=strtod(scan_head, NULL);
 					if(cfg->verbosity>2){
 						fprintf(stderr, "Transaction delta is %f\n", delta);
 					}
@@ -340,19 +354,6 @@ TRANSITION_RESULT state_credit(INPUT_TOKEN token, CONFIG* cfg){
 					res.action=TOKEN_CONSUME;
 					break;
 			}
-			break;
-		case TOKEN_BACKSPACE:
-			//pay total (hacky)
-			if(db_delta_transaction(cfg, user, -user.balance)){
-				printf("\rAccount paid\n");
-			}
-			else{
-				printf("\rTransaction failed\n");
-			}
-			portable_sleep(1000);	
-
-			res.action=TOKEN_CONSUME;
-			res.state=STATE_IDLE;
 			break;
 		case TOKEN_CANCEL:
 			res.action=TOKEN_CONSUME;

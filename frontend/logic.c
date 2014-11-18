@@ -140,6 +140,7 @@ int garfield_pos(CONFIG* cfg){
 								i=0;
 							}
 							//if token to be deleted is not NUMERAL or BACKSPACE, do not delete
+							//FIXME should also delete TOKEN_COMMA and TOKEN_MINUS
 							if(tok_read(INPUT.data+i)!=TOKEN_NUMERAL&&tok_read(INPUT.data+i)!=TOKEN_BACKSPACE){
 								i+=tok_length(tok_read(INPUT.data+i));
 							}
@@ -155,7 +156,7 @@ int garfield_pos(CONFIG* cfg){
 
 				//fix input buffer overrun
 				if(active_token==scan_head&&token!=TOKEN_INCOMPLETE&&trans.action!=TOKEN_DISCARD){
-					//FIXME test this
+					//FIXME this breaks with some TOKEN_BACKSPACE actions 
 					if(cfg->verbosity>3){
 						fprintf(stderr, "Resetting buffer\n");
 					}
