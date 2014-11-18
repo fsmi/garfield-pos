@@ -4,20 +4,22 @@ digraph G {
 	VFD [label="Display"];
 
 	POS [label="POS Core", shape=box];
-	BCD [label="Barcode Server"];
-	NumD [label="Numpad Server"];
+	BCD [label="kbserver Instance"];
+	NumD [label="kbserver Instance"];
 	OutD [label="Display Server"];
 
-#	DB [label="Database Server"];
+	DB [label="Database Server"];
 
-	BC -> BCD [label="USB/evdev"];
-	Num -> NumD [label="USB/evdev"];
+	BC -> BCD [label="USB/PS2 (evdev)"];
+	Num -> NumD [label="USB/PS2 (evdev)"];
 
 	BCD -> POS [label="TCP"];
 	NumD -> POS [label="TCP"];
 
-#	POS -> DB [label="PostgreSQL"];
+	POS -> DB [label="PostgreSQL/libPQ"];
 	POS -> OutD [label="TCP"];
 	
 	OutD -> VFD [label="USB/RS232"];
+
+	{rank=same; DB; POS;}
 }
