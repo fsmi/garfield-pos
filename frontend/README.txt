@@ -18,6 +18,7 @@ statemachine.c
 
 Communication with the backing postgres server is done via prepared
 queries, mainly calling stored procedures on the database.
+More information may be found in database.c
 
 Recognized Tokens
 -----------------
@@ -57,6 +58,11 @@ to the tokens TOKEN_CANCEL and TOKEN_BACKSPACE.
 TOKEN_CANCEL should always take the user to a recognizably 'safe' 
 state, while TOKEN_BACKSPACE should be the only token returning 
 an action of TOKEN_REMOVE.
+
+States may examine but not directly modify the parse buffer
+using the global INPUT structure. The supported method of
+operating on the parse buffer is using the action member
+of the TRANSITION_RESULT structure.
 
 Command-line options
 --------------------
