@@ -105,7 +105,6 @@ Build prerequisites
 
 The core should be able to build on windows when not defining 
 	USER_LOOKUP_FALLBACK_ENABLED
-in garfield-pos. This disables a fallback method of resolving
-user identification codes to user names that only works on unices.
-
-
+in garfield-pos.h.
+This disables a fallback method of resolving user identification codes to user 
+names that only works on unices.
