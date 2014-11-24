@@ -93,3 +93,19 @@ Valid directives are as follows
 Caveats
 -------
 Note that the database schema is always "garfield".
+The table garfield.print_accounts is unfortunately named.
+It simply contains a mapping from user identification numbers
+(the ones which are typed in) to the internal database user IDs.
+
+Build prerequisites
+-------------------
+	- a C compiler (tcc should do)
+	- PostgreSQL client header files (libpq-dev)
+	- make (not a hard requirement)
+
+The core should be able to build on windows when not defining 
+	USER_LOOKUP_FALLBACK_ENABLED
+in garfield-pos. This disables a fallback method of resolving
+user identification codes to user names that only works on unices.
+
+
