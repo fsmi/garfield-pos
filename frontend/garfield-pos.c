@@ -80,6 +80,7 @@ int main(int argc, char** argv){
 	
 	//set up signal handlers
 	signal(SIGINT, sig_interrupt);
+	signal(SIGTERM, sig_terminate);
 
 	//run the state machine
 	garfield_pos(&cfg);
