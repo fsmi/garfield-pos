@@ -100,7 +100,12 @@ TRANSITION_RESULT state_add(INPUT_TOKEN token, CONFIG* cfg){
 	
 	switch(token){
 		case TOKEN_NUMERAL:
+			printf("%c",INPUT.active_token[0]);
 			res.action=TOKEN_KEEP;
+			break;
+		case TOKEN_BACKSPACE:
+			printf("\b \b");
+			res.action=TOKEN_REMOVE;
 			break;
 		case TOKEN_CANCEL:
 			res.state=STATE_DISPLAY;
