@@ -93,9 +93,45 @@ TRANSITION_RESULT state_plu(INPUT_TOKEN token, CONFIG* cfg){
 	return res;
 }
 
+TRANSITION_RESULT state_add(INPUT_TOKEN token, CONFIG* cfg){
+	TRANSITION_RESULT res={STATE_ADD, TOKEN_CONSUME, false};
+	CART_ITEM item;
+	unsigned amount, i;
+	
+	switch(token){
+		case TOKEN_NUMERAL:
+			res.state=STATE_BARCODE;
+			res.action=TOKEN_KEEP;
+			break;
+		case TOKEN_CANCEL:
+			res.state=STATE_DISPLAY;
+			break;
+		case TOKEN_ENTER:
+		case TOKEN_ADD:
+			//add item
+			item=POS.cart[POS.items-1];
+			amount=strtoul(INPUT.parse_head, NULL, 10);
+			if(amount==0){
+				amount=1;
+			}
+			
+			fprintf(stderr, "Adding item %d %d times\n", item.id, amount);
+			
+			for(i=0;i<amount;i++){
+				cart_store(item, cfg);
+			}
+
+			res.state=STATE_DISPLAY;
+			break;
+		default:
+			res.action=TOKEN_DISCARD;
+	}
+
+	return res;
+}
+
 TRANSITION_RESULT state_display(INPUT_TOKEN token, CONFIG* cfg){
 	TRANSITION_RESULT res={STATE_DISPLAY, TOKEN_CONSUME, false};
-	CART_ITEM item;
 
 	switch(token){
 		case TOKEN_NUMERAL:
@@ -117,9 +153,7 @@ TRANSITION_RESULT state_display(INPUT_TOKEN token, CONFIG* cfg){
 			break;
 		case TOKEN_ADD:
 			if(POS.items>0){
-				item=POS.cart[POS.items-1];
-				cart_store(item, cfg);
-				res.force_redisplay=true;
+				res.state=STATE_ADD;
 			}
 			else if(cfg->verbosity>2){
 				fprintf(stderr, "No item to be duplicated\n");
@@ -266,6 +300,8 @@ TRANSITION_RESULT transition(POS_STATE state, INPUT_TOKEN token, CONFIG* cfg){
 			return state_barcode(token, cfg);
 		case STATE_PLU:
 			return state_plu(token, cfg);
+		case STATE_ADD:
+			return state_add(token, cfg);
 		case STATE_DISPLAY:
 			return state_display(token, cfg);
 		case STATE_STORNO:
@@ -289,6 +325,9 @@ void state_enter(POS_STATE s){
 			break;
 		case STATE_PLU:
 			printf("\fPLU: ");
+			break;
+		case STATE_ADD:
+			printf("\fAmount: ");
 			break;
 		case STATE_DISPLAY:
 			printf("\fLast item: %.2f\r\n%3d Total: %.2f\n", (POS.items>0)?POS.cart[POS.items-1].price:0.f, POS.items, cart_get_total());
@@ -314,6 +353,8 @@ const char* state_dbg_string(POS_STATE s){
 			return "STATE_BARCODE";
 		case STATE_PLU:
 			return "STATE_PLU";
+		case STATE_ADD:
+			return "STATE_ADD";
 		case STATE_DISPLAY:
 			return "STATE_DISPLAY";
 		case STATE_STORNO:
