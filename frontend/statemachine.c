@@ -100,7 +100,6 @@ TRANSITION_RESULT state_add(INPUT_TOKEN token, CONFIG* cfg){
 	
 	switch(token){
 		case TOKEN_NUMERAL:
-			res.state=STATE_BARCODE;
 			res.action=TOKEN_KEEP;
 			break;
 		case TOKEN_CANCEL:
