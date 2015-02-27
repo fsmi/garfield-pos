@@ -115,7 +115,7 @@ TRANSITION_RESULT state_add(INPUT_TOKEN token, CONFIG* cfg){
 			//add item
 			item=POS.cart[POS.items-1];
 			amount=strtoul(INPUT.parse_head, NULL, 10);
-			if(amount==0){
+			if(amount==0||amount>100){
 				amount=1;
 			}
 			
