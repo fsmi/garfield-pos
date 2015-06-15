@@ -19,7 +19,7 @@ int tcp_connect(char* host, int portnum){
 	//walk list
 	for(list_it=list;list_it!=NULL;list_it=list_it->ai_next){
 		fd=socket(list_it->ai_family, list_it->ai_socktype, list_it->ai_protocol);
-		if(fd>0){
+		if(fd>=0){
 			break;
 		}
 	}
