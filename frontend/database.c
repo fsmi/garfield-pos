@@ -86,8 +86,11 @@ GARFIELD_USER db_query_user(CONFIG* cfg, int unixid){
 							ON print_accounts.user_id=users.user_id \
 						WHERE print_account_no=$1::integer";
 
-	GARFIELD_USER rv;
-	rv.unixid=-1;
+	GARFIELD_USER rv = {
+		.unixid = -1,
+		.account_no = -1,
+		.name = ""
+	};
 
 	#ifdef USER_LOOKUP_FALLBACK_ENABLED
 		static const char* QUERY_ACCOUNT_BY_USERNAME="SELECT user_id FROM garfield.users WHERE user_name = $1";
