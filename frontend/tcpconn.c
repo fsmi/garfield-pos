@@ -36,6 +36,7 @@ int tcp_connect(char* host, int portnum){
 	if(status<0){
 		perror("connect");
 		freeaddrinfo(list);
+		close(fd);
 		return -1;
 	}
 
