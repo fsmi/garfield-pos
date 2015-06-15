@@ -113,7 +113,7 @@ bool cfg_read(CONFIG* cfg, char* file){
 			cfg->connections=realloc(cfg->connections, cfg->connection_count*sizeof(CONNECTION));
 			if(!cfg->connections){
 				fprintf(stderr, "Failed to allocate memory for connection data\n");
-				//TODO exit fail
+				return false;
 			}
 			
 			cfg->connections[cfg->connection_count-1]=conn;
