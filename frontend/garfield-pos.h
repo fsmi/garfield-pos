@@ -5,6 +5,7 @@
 #define INPUT_BUFFER_LENGTH 128
 #define MAX_USERNAME_LENGTH 128
 #define USER_LOOKUP_FALLBACK_ENABLED
+#define DEFAULT_GARFIELD_LOCATION "1"
 
 #ifdef USER_LOOKUP_FALLBACK_ENABLED
 	#include <sys/types.h>
@@ -86,6 +87,7 @@ typedef struct /*_CONFIG_PARAMS*/ {
 	char* cfg_file;
 	int verbosity;
 	int connection_count;
+	char* location;
 	CONNECTION* connections;
 	DATABASE db;
 } CONFIG;
