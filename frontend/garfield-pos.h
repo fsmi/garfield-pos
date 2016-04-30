@@ -1,10 +1,11 @@
-#define VERSION "0.2-kif"
+#define VERSION "0.3-kif"
 #define MAX_CFGLINE_LENGTH 1024
 #define MAX_PASSWORD_LENGTH 128
 #define PGRES_SSLMODE "require"
 #define INPUT_BUFFER_LENGTH 128
 #define MAX_USERNAME_LENGTH 128
 //#define USER_LOOKUP_FALLBACK_ENABLED
+#define DEFAULT_GARFIELD_LOCATION "1"
 
 #ifdef USER_LOOKUP_FALLBACK_ENABLED
 	#include <sys/types.h>
@@ -21,6 +22,7 @@ typedef enum /*_LOGIC_STATE*/ {
 	STATE_BARCODE,
 	STATE_PLU,
 	STATE_DISPLAY,
+	STATE_ADD,
 	STATE_STORNO,
 	STATE_PAY,
 	STATE_DEBUG,
@@ -89,6 +91,7 @@ typedef struct /*_CONFIG_PARAMS*/ {
 	char* cfg_file;
 	int verbosity;
 	int connection_count;
+	char* location;
 	CONNECTION* connections;
 	DATABASE db;
 } CONFIG;

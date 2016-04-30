@@ -4,10 +4,12 @@ void cfg_init(CONFIG* cfg){
 }
 
 void cfg_conn_init(CONNECTION* conn){
-	conn->host=NULL;
-	conn->port=0;
-	conn->type=CONN_INPUT;
-	conn->fd=-1;
+	*conn = (CONNECTION){
+		.host = NULL,
+		.port = 0,
+		.type = CONN_INPUT,
+		.fd = -1
+	};
 }
 
 void cfg_parse_hostspec(CONNECTION* conn, char* spec){
@@ -32,21 +34,12 @@ void cfg_free(CONFIG* cfg){
 		free(cfg->connections);
 	}
 
-	if(cfg->db.server){
-		free(cfg->db.server);
-	}
-
-	if(cfg->db.user){
-		free(cfg->db.user);
-	}
-
-	if(cfg->db.pass){
-		free(cfg->db.pass);
-	}
-
-	if(cfg->db.db_name){
-		free(cfg->db.db_name);
-	}
+	free(cfg->location);
+	free(cfg->db.server);
+	free(cfg->db.user);
+	free(cfg->db.pass);
+	free(cfg->db.db_name);
+	cfg_init(cfg);
 }
 
 bool cfg_read(CONFIG* cfg, char* file){
@@ -113,7 +106,8 @@ bool cfg_read(CONFIG* cfg, char* file){
 			cfg->connections=realloc(cfg->connections, cfg->connection_count*sizeof(CONNECTION));
 			if(!cfg->connections){
 				fprintf(stderr, "Failed to allocate memory for connection data\n");
-				//TODO exit fail
+				fclose(handle);
+				return false;
 			}
 			
 			cfg->connections[cfg->connection_count-1]=conn;
@@ -144,8 +138,7 @@ bool cfg_read(CONFIG* cfg, char* file){
 				}
 				continue;
 			}
-			cfg->db.user=calloc(sizeof(char), strlen(argument)+1);
-			strncpy(cfg->db.user, argument, strlen(argument));
+			cfg->db.user = strdup(argument);
 		}
 		else if(!strncmp(line_head, "db_name", 7)){
 			//db_name stanza
@@ -155,8 +148,7 @@ bool cfg_read(CONFIG* cfg, char* file){
 				}
 				continue;
 			}
-			cfg->db.db_name=calloc(sizeof(char), strlen(argument)+1);
-			strncpy(cfg->db.db_name, argument, strlen(argument));
+			cfg->db.db_name = strdup(argument);
 		}
 		else if(!strncmp(line_head, "db_persist", 10)){
 			//db_persist stanza
@@ -169,6 +161,10 @@ bool cfg_read(CONFIG* cfg, char* file){
 			if(!strncmp(argument, "true", 4)){
 				cfg->db.use_pgpass=true;
 			}
+		}
+		else if(!strncmp(line_head, "garfield_location", 17)){
+			//garfield location stanza
+			cfg->location = strdup(argument);
 		}
 		else{
 			fprintf(stderr, "Unrecognized config line %s\n", line_head);
@@ -212,6 +208,10 @@ bool cfg_sane(CONFIG* cfg){
 		return false;
 	}
 
+	if(!cfg->location){
+		cfg->location = strdup(DEFAULT_GARFIELD_LOCATION);
+	}
+
 	if(cfg->db.port==0){
 		fprintf(stderr, "Invalid database port\n");
 		return false;
@@ -246,6 +246,7 @@ bool cfg_sane(CONFIG* cfg){
 		fprintf(stderr, "Database user name: %s\n", cfg->db.user);
 		fprintf(stderr, "Database connection is %spersistent\n", (cfg->db.persist_connection)?"":"non-");
 		fprintf(stderr, "Using pgpass: %s\n", (cfg->db.use_pgpass)?"yes":"no");
+		fprintf(stderr, "Garfield location: %s\n", cfg->location);
 	}
 
 	return true;

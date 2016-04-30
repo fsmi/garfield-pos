@@ -133,8 +133,11 @@ GARFIELD_USER db_query_user(CONFIG* cfg, int unixid){
 							ON balances.user=users.user_id \
 						WHERE print_account_no=$1::integer";
 
-	GARFIELD_USER rv;
-	rv.unixid=-1;
+	GARFIELD_USER rv = {
+		.unixid = -1,
+		.account_no = -1,
+		.name = ""
+	};
 
 	#ifdef USER_LOOKUP_FALLBACK_ENABLED
 		static const char* QUERY_ACCOUNT_BY_USERNAME="SELECT user_id FROM garfield.users WHERE user_name = $1";
@@ -221,50 +224,52 @@ CART_ITEM db_query_item(CONFIG* cfg, char* barcode){
 		snacks.snack_id, snack_name, snack_price \
 		FROM garfield.snacks JOIN garfield.snacks_available \
 		ON snacks_available.snack_id = snacks.snack_id \
-		WHERE snack_available AND location_id=1 AND snack_barcode = $1";
+		WHERE snack_available AND location_id=$2 AND snack_barcode = $1";
 
-	//FIXME FSI hardcoded. ugly
 	int i;
-	CART_ITEM rv={0, 0.0};
+	CART_ITEM rv = {0, 0.0};
+	char* barcode_buffer = NULL;
+	char* query_params[2];
 
-	char* barcode_buffer=NULL;
-	
 	if(!db_conn_begin(cfg)){
-		if(cfg->verbosity>0){
+		if(cfg->verbosity > 0){
 			fprintf(stderr, "Failed to begin database communication\n");
 		}
 		return rv;
 	}
 
-	barcode_buffer=malloc(INPUT_BUFFER_LENGTH);
+	barcode_buffer = calloc(INPUT_BUFFER_LENGTH, sizeof(char));
 	if(!barcode_buffer){
 		//FIXME error message
 		return rv;
 	}
 
-	for(i=0;isdigit(barcode[i]);i++){
-		barcode_buffer[i]=barcode[i];
+	for(i = 0; isdigit(barcode[i]) && i < INPUT_BUFFER_LENGTH; i++){
+		barcode_buffer[i] = barcode[i];
 	}
-	barcode_buffer[i]=0;
 
-	if(cfg->verbosity>3){
+	if(cfg->verbosity > 3){
 		fprintf(stderr, "Searching for barcode %s\n", barcode_buffer);
 		//printf("QUERY: %s\n",QUERY_SNACK);
 	}
 
+	//prepare query parameters
+	query_params[0] = barcode_buffer;
+	query_params[1] = cfg->location;
+
 	//query item
-	PGresult* result=PQexecParams(cfg->db.conn, QUERY_SNACK, 1, NULL, (const char**)&barcode_buffer, NULL, NULL, 0);
+	PGresult* result = PQexecParams(cfg->db.conn, QUERY_SNACK, 2, NULL, (const char**)query_params, NULL, NULL, 0);
 
 	if(result){
-		if(PQresultStatus(result)==PGRES_TUPLES_OK){
-			if(PQntuples(result)==1){
-				rv.id=strtoul(PQgetvalue(result, 0, 0), NULL, 10);
-				rv.price=strtof(PQgetvalue(result, 0, 2), NULL);	
-				if(cfg->verbosity>3){
+		if(PQresultStatus(result) == PGRES_TUPLES_OK){
+			if(PQntuples(result) == 1){
+				rv.id = strtoul(PQgetvalue(result, 0, 0), NULL, 10);
+				rv.price = strtof(PQgetvalue(result, 0, 2), NULL);
+				if(cfg->verbosity > 3){
 					fprintf(stderr, "Queried snack: %s\n", PQgetvalue(result, 0, 1));
 				}
 			}
-			else if(cfg->verbosity>1){
+			else if(cfg->verbosity > 1){
 				fprintf(stderr, "Query returned %d matches\n", PQntuples(result));
 			}
 		}
