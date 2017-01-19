@@ -243,7 +243,7 @@ TRANSITION_RESULT state_pay(INPUT_TOKEN token, CONFIG* cfg){
 			res.action=TOKEN_REMOVE;
 			break;
 		case TOKEN_ENTER:
-			printf("\n");
+			printf("\r\n");
 			user.unixid=strtoul(INPUT.parse_head, NULL, 10);
 			user=db_query_user(cfg, user.unixid);
 
