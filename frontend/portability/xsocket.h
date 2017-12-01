@@ -13,7 +13,7 @@
 	#include <netdb.h> //getaddrinfo
 #endif
 
-int inline xsocket_init(){
+int xsocket_init(){
 	#ifdef _WIN32
 		WSADATA wsaData;
 		if(WSAStartup(MAKEWORD(2,0),&wsaData)!=0){
@@ -23,7 +23,7 @@ int inline xsocket_init(){
 	return 0;
 }
 
-void inline xsocket_teardown(){
+void  xsocket_teardown(){
 	#ifdef _WIN32
 		WSACleanup();
 	#endif
